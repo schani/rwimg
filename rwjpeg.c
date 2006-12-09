@@ -5,7 +5,7 @@
  *
  * metapixel
  *
- * Copyright (C) 2000 Mark Probst
+ * Copyright (C) 2000-2004 Mark Probst
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -31,12 +31,13 @@
 typedef struct
 {
     FILE *file;
+    int decompress_started;
     struct jpeg_decompress_struct cinfo;
     struct jpeg_error_mgr jerr;
 } jpeg_data_t;
 
 void*
-open_jpeg_file (char *filename, int *width, int *height)
+open_jpeg_file (const char *filename, int *width, int *height)
 {
     jpeg_data_t *data = (jpeg_data_t*)malloc(sizeof(jpeg_data_t));
 
@@ -60,7 +61,7 @@ open_jpeg_file (char *filename, int *width, int *height)
     *width = data->cinfo.image_width;
     *height = data->cinfo.image_height;
 
-    jpeg_start_decompress(&data->cinfo);
+    data->decompress_started = 0;
 
     return data;
 }
@@ -70,6 +71,12 @@ jpeg_read_lines (void *_data, unsigned char *lines, int num_lines)
 {
     jpeg_data_t *data = (jpeg_data_t*)_data;
     int row_stride, i;
+
+    if (!data->decompress_started)
+    {
+	jpeg_start_decompress(&data->cinfo);
+	data->decompress_started = 1;
+    }
 
     row_stride = data->cinfo.image_width * 3;
 
@@ -100,7 +107,8 @@ jpeg_free_data (void *_data)
 {
     jpeg_data_t *data = (jpeg_data_t*)_data;
 
-    jpeg_finish_decompress(&data->cinfo);
+    if (data->decompress_started)
+	jpeg_finish_decompress(&data->cinfo);
     jpeg_destroy_decompress(&data->cinfo);
 
     fclose(data->file);

@@ -5,7 +5,7 @@
  *
  * metapixel
  *
- * Copyright (C) 2000 Mark Probst
+ * Copyright (C) 2000-2004 Mark Probst
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,13 +38,19 @@ typedef struct
     image_writer_free_func_t free_func;
 } image_writer_t;
 
+#ifdef RWIMG_PNG
 #define IMAGE_FORMAT_PNG    1
+#endif
+#ifdef RWIMG_JPEG
 #define IMAGE_FORMAT_JPEG   2
+#endif
 
-image_writer_t* open_image_writing (char *filename, int width, int height, int format);
+image_writer_t* open_image_writing (const char *filename, int width, int height,
+				    int pixel_stride, int row_stride, int format);
 void write_lines (image_writer_t *writer, unsigned char *lines, int num_lines);
 void free_image_writer (image_writer_t *writer);
 
-void write_image (char *filename, int width, int height, unsigned char *lines, int format);
+void write_image (const char *filename, int width, int height, unsigned char *lines,
+		  int pixel_stride, int row_stride, int format);
 
 #endif

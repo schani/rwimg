@@ -5,7 +5,7 @@
  *
  * metapixel
  *
- * Copyright (C) 2000 Mark Probst
+ * Copyright (C) 2000-2004 Mark Probst
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,24 +25,30 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#ifdef RWIMG_PNG
 #include "rwpng.h"
+#endif
 
 #include "writeimage.h"
 
 image_writer_t*
-open_image_writing (char *filename, int width, int height, int format)
+open_image_writing (const char *filename, int width, int height, int pixel_stride, int row_stride, int format)
 {
     image_writer_t *writer;
     void *data = 0;
     image_write_func_t write_func = 0;
     image_writer_free_func_t free_func = 0;
 
-    if (format == IMAGE_FORMAT_PNG)
+    if (0)
+	assert(0);
+#ifdef RWIMG_PNG
+    else if (format == IMAGE_FORMAT_PNG)
     {
-	data = open_png_file_writing(filename, width, height);
+	data = open_png_file_writing(filename, width, height, pixel_stride, row_stride);
 	write_func = png_write_lines;
 	free_func = png_free_writer_data;
     }
+#endif
     else
 	assert(0);
 
@@ -76,9 +82,10 @@ free_image_writer (image_writer_t *writer)
 }
 
 void
-write_image (char *filename, int width, int height, unsigned char *lines, int format)
+write_image (const char *filename, int width, int height, unsigned char *lines,
+	     int pixel_stride, int row_stride, int format)
 {
-    image_writer_t *writer = open_image_writing(filename, width, height, format);
+    image_writer_t *writer = open_image_writing(filename, width, height, pixel_stride, row_stride, format);
 
     assert(writer != 0);
 

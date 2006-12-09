@@ -5,7 +5,7 @@
  *
  * metapixel
  *
- * Copyright (C) 1997-2000 Mark Probst
+ * Copyright (C) 1997-2004 Mark Probst
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,10 +34,12 @@ typedef struct
     FILE *file;
     png_structp png_ptr;
     png_infop info_ptr, end_info;
+    int row_stride;
+    int have_read;
 } png_data_t;
 
 void*
-open_png_file_reading (char *filename, int *width, int *height)
+open_png_file_reading (const char *filename, int *width, int *height)
 {
     png_data_t *data = (png_data_t*)malloc(sizeof(png_data_t));
 
@@ -68,6 +70,8 @@ open_png_file_reading (char *filename, int *width, int *height)
     assert(data->info_ptr->bit_depth == 8 || data->info_ptr->bit_depth == 16);
     assert(data->info_ptr->color_type == PNG_COLOR_TYPE_RGB || data->info_ptr->color_type == PNG_COLOR_TYPE_RGB_ALPHA);
     assert(data->info_ptr->interlace_type == PNG_INTERLACE_NONE);
+
+    data->have_read = 0;
 
     return data;
 }
@@ -106,6 +110,8 @@ png_read_lines (void *_data, unsigned char *lines, int num_lines)
     }
 
     free(row);
+
+    data->have_read = 1;
 }
 
 void
@@ -116,7 +122,8 @@ png_free_reader_data (void *_data)
     if (setjmp(data->png_ptr->jmpbuf))
 	assert(0);
 
-    png_read_end(data->png_ptr, data->end_info);
+    if (data->have_read)
+	png_read_end(data->png_ptr, data->end_info);
     png_destroy_read_struct(&data->png_ptr, &data->info_ptr, &data->end_info);
     fclose(data->file);
 
@@ -124,11 +131,13 @@ png_free_reader_data (void *_data)
 }
 
 void*
-open_png_file_writing (char *filename, int width, int height)
+open_png_file_writing (const char *filename, int width, int height, int pixel_stride, int row_stride)
 {
     png_data_t *data = (png_data_t*)malloc(sizeof(png_data_t));
 
     assert(data != 0);
+
+    assert(pixel_stride == 3 || pixel_stride == 4);
 
     data->file = fopen(filename, "w");
     assert(data->file != 0);
@@ -142,6 +151,9 @@ open_png_file_writing (char *filename, int width, int height)
     if (setjmp(data->png_ptr->jmpbuf))
 	assert(0);
 
+    if (pixel_stride == 4)
+	png_set_filler(data->png_ptr, 0, PNG_FILLER_AFTER);
+
     png_init_io(data->png_ptr, data->file);
 
     data->info_ptr->width = width;
@@ -153,11 +165,13 @@ open_png_file_writing (char *filename, int width, int height)
     data->info_ptr->num_trans = 0;
     data->info_ptr->bit_depth = 8;
     data->info_ptr->color_type = PNG_COLOR_TYPE_RGB;
-    data->info_ptr->compression_type = PNG_COMPRESSION_TYPE_BASE;
-    data->info_ptr->filter_type = PNG_FILTER_TYPE_BASE;
+    data->info_ptr->compression_type = PNG_COMPRESSION_TYPE_DEFAULT;
+    data->info_ptr->filter_type = PNG_FILTER_TYPE_DEFAULT;
     data->info_ptr->interlace_type = PNG_INTERLACE_NONE;
 
     png_write_info(data->png_ptr, data->info_ptr);
+
+    data->row_stride = row_stride;
 
     return data;
 }
@@ -172,7 +186,7 @@ png_write_lines (void *_data, unsigned char *lines, int num_lines)
 	assert(0);
 
     for (i = 0; i < num_lines; ++i)
-	png_write_row(data->png_ptr, (png_bytep)(lines + i * 3 * data->info_ptr->width));
+	png_write_row(data->png_ptr, (png_bytep)(lines + i * data->row_stride));
 }
 
 void

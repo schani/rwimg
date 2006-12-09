@@ -5,7 +5,7 @@
  *
  * metapixel
  *
- * Copyright (C) 2000 Mark Probst
+ * Copyright (C) 2000-2004 Mark Probst
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,11 +28,15 @@
 #include <assert.h>
 
 #include "readimage.h"
+#ifdef RWIMG_JPEG
 #include "rwjpeg.h"
+#endif
+#ifdef RWIMG_PNG
 #include "rwpng.h"
+#endif
 
 image_reader_t*
-open_image_reading (char *filename)
+open_image_reading (const char *filename)
 {
     unsigned char magic[4];
     FILE *file;
@@ -56,15 +60,23 @@ open_image_reading (char *filename)
 
     if (memcmp(magic, "\xff\xd8", 2) == 0)
     {
+#ifdef RWIMG_JPEG
 	data = open_jpeg_file(filename, &width, &height);
 	read_func = jpeg_read_lines;
 	free_func = jpeg_free_data;
+#else
+	return 0;
+#endif
     }
     else if (memcmp(magic, "\x89PNG", 4) == 0)
     {
+#ifdef RWIMG_PNG
 	data = open_png_file_reading(filename, &width, &height);
 	read_func = png_read_lines;
 	free_func = png_free_reader_data;
+#else
+	return 0;
+#endif
     }
     else
 	return 0;
@@ -102,7 +114,7 @@ free_image_reader (image_reader_t *reader)
 }
 
 unsigned char*
-read_image (char *filename, int *width, int *height)
+read_image (const char *filename, int *width, int *height)
 {
     image_reader_t *reader = open_image_reading(filename);
     unsigned char *data;
