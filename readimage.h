@@ -3,7 +3,7 @@
 /*
  * readimage.h
  *
- * metapixel
+ * rwimg
  *
  * Copyright (C) 2000-2004 Mark Probst
  *

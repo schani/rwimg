@@ -3,9 +3,10 @@
 /*
  * writeimage.c
  *
- * metapixel
+ * rwimg
  *
- * Copyright (C) 2000-2004 Mark Probst
+ * Copyright (C) 2000-2006 Mark Probst
+ * Copyright (C) 2006 Xavier Martin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -28,6 +29,9 @@
 #ifdef RWIMG_PNG
 #include "rwpng.h"
 #endif
+#ifdef RWIMG_JPEG
+#include "rwjpeg.h"
+#endif
 
 #include "writeimage.h"
 
@@ -47,6 +51,14 @@ open_image_writing (const char *filename, int width, int height, int pixel_strid
 	data = open_png_file_writing(filename, width, height, pixel_stride, row_stride);
 	write_func = png_write_lines;
 	free_func = png_free_writer_data;
+    }
+#endif
+#ifdef RWIMG_JPEG
+    else if(format == IMAGE_FORMAT_JPEG)
+    {
+	data = open_jpeg_file_writing(filename, width, height);
+	write_func = jpeg_write_lines;
+	free_func = jpeg_free_writer_data;
     }
 #endif
     else

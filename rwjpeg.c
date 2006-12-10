@@ -3,9 +3,10 @@
 /*
  * rwjpeg.c
  *
- * metapixel
+ * rwimg
  *
- * Copyright (C) 2000-2004 Mark Probst
+ * Copyright (C) 2000-2006 Mark Probst
+ * Copyright (C) 2006 Xavier Martin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -33,17 +34,18 @@ typedef struct
     FILE *file;
     int decompress_started;
     struct jpeg_decompress_struct cinfo;
+    struct jpeg_compress_struct cinfo2;
     struct jpeg_error_mgr jerr;
 } jpeg_data_t;
 
 void*
-open_jpeg_file (const char *filename, int *width, int *height)
+open_jpeg_file_reading (const char *filename, int *width, int *height)
 {
     jpeg_data_t *data = (jpeg_data_t*)malloc(sizeof(jpeg_data_t));
 
     assert(data != 0);
 
-    data->file = fopen(filename, "r");
+    data->file = fopen(filename, "rb");
     assert(data->file != 0);
 
     data->cinfo.err = jpeg_std_error(&data->jerr);
@@ -103,7 +105,7 @@ jpeg_read_lines (void *_data, unsigned char *lines, int num_lines)
 }
 
 void
-jpeg_free_data (void *_data)
+jpeg_free_reader_data (void *_data)
 {
     jpeg_data_t *data = (jpeg_data_t*)_data;
 
@@ -111,6 +113,56 @@ jpeg_free_data (void *_data)
 	jpeg_finish_decompress(&data->cinfo);
     jpeg_destroy_decompress(&data->cinfo);
 
+    fclose(data->file);
+
+    free(data);
+}
+
+void*
+open_jpeg_file_writing (const char *filename, int width, int height)
+{
+    jpeg_data_t *data = (jpeg_data_t*)malloc(sizeof(jpeg_data_t));
+
+    assert(data != 0);
+
+    data->file = fopen(filename, "wb");
+    assert(data->file != 0);
+	
+    data->cinfo2.err = jpeg_std_error(&data->jerr);
+    jpeg_create_compress(&data->cinfo2);
+    jpeg_stdio_dest(&data->cinfo2, data->file);
+    data->cinfo2.image_width = width;
+    data->cinfo2.image_height = height;
+    data->cinfo2.input_components = 3;
+    data->cinfo2.in_color_space = JCS_RGB;
+    jpeg_set_defaults(&data->cinfo2);    
+    jpeg_start_compress(&data->cinfo2, TRUE);
+
+    return data;
+}
+
+void
+jpeg_write_lines (void *_data, unsigned char *lines, int num_lines)
+{
+    jpeg_data_t *data = (jpeg_data_t*)_data;
+    JSAMPROW row_pointer[1];
+    int i;
+
+    for ( i = 0; i < num_lines; ++i) 
+    {
+        row_pointer[0] = &lines[ i * data->cinfo2.image_width * 3 ];
+        jpeg_write_scanlines(&data->cinfo2, row_pointer, 1);	
+    }
+}
+
+void
+jpeg_free_writer_data (void *_data)
+{
+    jpeg_data_t *data = (jpeg_data_t*)_data;
+
+    jpeg_finish_compress(&data->cinfo2);
+    jpeg_destroy_compress(&data->cinfo2);
+    
     fclose(data->file);
 
     free(data);

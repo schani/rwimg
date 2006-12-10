@@ -3,7 +3,7 @@
 /*
  * rwpng.c
  *
- * metapixel
+ * rwimg
  *
  * Copyright (C) 1997-2004 Mark Probst
  *

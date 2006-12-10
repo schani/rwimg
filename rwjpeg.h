@@ -3,9 +3,10 @@
 /*
  * rwjpeg.h
  *
- * metapixel
+ * rwimg
  *
  * Copyright (C) 2000-2004 Mark Probst
+ * Copyright (C) 2006 Xavier Martin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -25,8 +26,12 @@
 #ifndef __RWJPEG_H__
 #define __RWJPEG_H__
 
-void* open_jpeg_file (const char *filename, int *width, int *height);
+void* open_jpeg_file_reading (const char *filename, int *width, int *height);
 void jpeg_read_lines (void *data, unsigned char *lines, int num_lines);
-void jpeg_free_data (void *data);
+void jpeg_free_reader_data (void *data);
+
+void* open_jpeg_file_writing (const char *filename, int width, int height);
+void jpeg_write_lines (void *data, unsigned char *lines, int num_lines);
+void jpeg_free_writer_data (void *data);
 
 #endif

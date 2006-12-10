@@ -3,9 +3,10 @@
 /*
  * readimage.c
  *
- * metapixel
+ * rwimg
  *
- * Copyright (C) 2000-2004 Mark Probst
+ * Copyright (C) 2000-2006 Mark Probst
+ * Copyright (C) 2006 Xavier Martin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -34,6 +35,9 @@
 #ifdef RWIMG_PNG
 #include "rwpng.h"
 #endif
+#ifdef RWIMG_GIF
+#include "rwgif.h"
+#endif
 
 image_reader_t*
 open_image_reading (const char *filename)
@@ -61,9 +65,9 @@ open_image_reading (const char *filename)
     if (memcmp(magic, "\xff\xd8", 2) == 0)
     {
 #ifdef RWIMG_JPEG
-	data = open_jpeg_file(filename, &width, &height);
+	data = open_jpeg_file_reading(filename, &width, &height);
 	read_func = jpeg_read_lines;
-	free_func = jpeg_free_data;
+	free_func = jpeg_free_reader_data;
 #else
 	return 0;
 #endif
@@ -78,7 +82,17 @@ open_image_reading (const char *filename)
 	return 0;
 #endif
     }
-    else
+    else if (memcmp(magic, "GIF8", 4) == 0)
+    {
+#ifdef RWIMG_GIF
+	data = open_gif_file(filename, &width, &height);
+	read_func = gif_read_lines;
+	free_func = gif_free_data;
+#else
+	return 0;
+#endif
+    }
+    else	
 	return 0;
 
     if (data == 0)
