@@ -3,9 +3,9 @@
 /*
  * writeimage.h
  *
- * metapixel
+ * rwimg
  *
- * Copyright (C) 2000-2004 Mark Probst
+ * Copyright (C) 2000-2006 Mark Probst
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -38,6 +38,7 @@ typedef struct
     image_writer_free_func_t free_func;
 } image_writer_t;
 
+#define IMAGE_FORMAT_AUTO   0
 #ifdef RWIMG_PNG
 #define IMAGE_FORMAT_PNG    1
 #endif

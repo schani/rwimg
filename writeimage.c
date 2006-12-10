@@ -25,6 +25,8 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 
 #ifdef RWIMG_PNG
 #include "rwpng.h"
@@ -35,6 +37,43 @@
 
 #include "writeimage.h"
 
+static int
+discover_format (const char *filename)
+{
+    static struct { const char *suffix; int format; } formats[] =
+							  {
+#ifdef RWIMG_PNG
+							      { ".png", IMAGE_FORMAT_PNG },
+#endif
+#ifdef RWIMG_JPEG
+							      { ".jpg", IMAGE_FORMAT_JPEG },
+							      { ".jpeg", IMAGE_FORMAT_JPEG },
+#endif
+							      { 0, 0 }
+							  };
+
+    int filename_len = strlen(filename);
+    int i;
+
+    for (i = 0; formats[i].suffix != 0; ++i)
+    {
+	int suffix_len = strlen(formats[i].suffix);
+
+	if (filename_len >= suffix_len
+	    && strcasecmp(formats[i].suffix, filename + filename_len - suffix_len) == 0)
+	    return formats[i].format;
+    }
+
+    /* no format found - using default (PNG if possible, otherwise JPEG) */
+#if defined(RWIMG_PNG)
+    return IMAGE_FORMAT_PNG;
+#elif defined(RWIMG_JPEG)
+    return IMAGE_FORMAT_JPEG;
+#else
+    return 0;			/* error: no such format available */
+#endif
+}
+
 image_writer_t*
 open_image_writing (const char *filename, int width, int height, int pixel_stride, int row_stride, int format)
 {
@@ -42,6 +81,13 @@ open_image_writing (const char *filename, int width, int height, int pixel_strid
     void *data = 0;
     image_write_func_t write_func = 0;
     image_writer_free_func_t free_func = 0;
+
+    if (format == IMAGE_FORMAT_AUTO)
+    {
+	format = discover_format(filename);
+	if (format == 0)
+	    return 0;
+    }
 
     if (0)
 	assert(0);
