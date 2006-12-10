@@ -6,7 +6,7 @@ librwimg.a : $(OBJS)
 	ar rcu librwimg.a $(OBJS)
 
 %.o : %.c
-	gcc -g -c $<
+	$(CC) $(CCOPTS) -g -c $<
 
 clean :
 	rm -f *~ $(OBJS) librwimg.a
