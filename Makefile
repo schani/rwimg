@@ -8,7 +8,7 @@ librwimg.a : $(OBJS)
 	ar rcu librwimg.a $(OBJS)
 
 %.o : %.c
-	$(CC) $(CCOPTS) $(FORMATDEFS) -g -c $<
+	$(CC) $(CFLAGS) $(FORMATDEFS) -g -c $<
 
 clean :
 	rm -f *~ $(OBJS) librwimg.a
