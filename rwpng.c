@@ -35,6 +35,7 @@ typedef struct
     png_structp png_ptr;
     png_infop info_ptr, end_info;
     int row_stride;
+    int pixel_stride;
     int have_read;
 } png_data_t;
 
@@ -137,7 +138,7 @@ open_png_file_writing (const char *filename, int width, int height, int pixel_st
 
     assert(data != 0);
 
-    assert(pixel_stride == 3 || pixel_stride == 4);
+    assert(pixel_stride >= 3);
 
     data->file = fopen(filename, "w");
     assert(data->file != 0);
@@ -171,6 +172,7 @@ open_png_file_writing (const char *filename, int width, int height, int pixel_st
 
     png_write_info(data->png_ptr, data->info_ptr);
 
+    data->pixel_stride = pixel_stride;
     data->row_stride = row_stride;
 
     return data;
@@ -180,13 +182,43 @@ void
 png_write_lines (void *_data, unsigned char *lines, int num_lines)
 {
     png_data_t *data = (png_data_t*)_data;
+    unsigned char *packed_line;
     int i;
 
     if (setjmp(data->png_ptr->jmpbuf))
 	assert(0);
 
+    if (data->pixel_stride != 3)
+    {
+	packed_line = (unsigned char*)malloc(data->info_ptr->width * 3);
+	assert(packed_line != 0);
+    }
+    else
+	packed_line = 0;
+
     for (i = 0; i < num_lines; ++i)
-	png_write_row(data->png_ptr, (png_bytep)(lines + i * data->row_stride));
+    {
+	unsigned char *p = lines + i * data->row_stride;
+
+	if (packed_line != 0)
+	{
+	    int j;
+
+	    for (j = 0; j < data->info_ptr->width; ++j)
+	    {
+		packed_line[j * 3 + 0] = p[j * data->pixel_stride + 0];
+		packed_line[j * 3 + 1] = p[j * data->pixel_stride + 1];
+		packed_line[j * 3 + 2] = p[j * data->pixel_stride + 2];
+	    }
+
+	    p = packed_line;
+	}
+
+	png_write_row(data->png_ptr, (png_bytep)p);
+    }
+
+    if (packed_line != 0)
+	free(packed_line);
 }
 
 void
