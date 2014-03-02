@@ -54,7 +54,8 @@ open_gif_file (const char *filename, int *width, int *height)
     
     assert(data != 0);
     
-    data->file = DGifOpenFileName(filename);
+    int error;
+    data->file = DGifOpenFileName(filename, &error);
     
     assert(data->file !=0);
         
