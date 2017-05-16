@@ -29,6 +29,13 @@
 #include <gif_lib.h>
 #include <string.h>
 
+// From https://github.com/Automattic/node-canvas/issues/440 (2017-05-15)
+#if GIFLIB_MAJOR > 5 || GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1
+  #define GIF_CLOSE_FILE(gif) DGifCloseFile(gif, NULL)
+#else
+  #define GIF_CLOSE_FILE(gif) DGifCloseFile(gif)
+#endif
+
 typedef struct
 {
     GifFileType *file;
@@ -138,7 +145,7 @@ open_gif_file (const char *filename, int *width, int *height)
     }
     free(buffer);
     
-    assert(DGifCloseFile(data->file) == GIF_OK);
+    assert(GIF_CLOSE_FILE(data->file) == GIF_OK);
     
     return data;
 }
