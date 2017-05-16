@@ -29,6 +29,11 @@
 #include <gif_lib.h>
 #include <string.h>
 
+#if GIFLIB_MAJOR >= 5
+  #define GIF_OPEN_FILE_NAME(filename) DGifOpenFileName(filename, NULL)
+#else
+  #define GIF_OPEN_FILE_NAME(filename) DGifOpenFileName(filename)
+#endif
 // From https://github.com/Automattic/node-canvas/issues/440 (2017-05-15)
 #if GIFLIB_MAJOR > 5 || GIFLIB_MAJOR == 5 && GIFLIB_MINOR >= 1
   #define GIF_CLOSE_FILE(gif) DGifCloseFile(gif, NULL)
@@ -61,8 +66,7 @@ open_gif_file (const char *filename, int *width, int *height)
     
     assert(data != 0);
     
-    int error;
-    data->file = DGifOpenFileName(filename, &error);
+    data->file = GIF_OPEN_FILE_NAME(filename);
     
     assert(data->file !=0);
         
